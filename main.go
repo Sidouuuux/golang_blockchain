@@ -4,22 +4,79 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-
-	"rsc.io/quote"
 )
 
+//Block
 type Block struct {
-	Hash     []byte
-	Data     []byte
+	//hash du block
+	Hash []byte
+	//données du block
+	Data []byte
+	//hash du block précédent
 	PrevHash []byte
 }
 
+//Blockchain avec un tableau contenant les pointeurs vers chaque block
+type Blockchain struct {
+	blocks []*Block
+}
+
+//création d'un hash
 func (b *Block) HashingBlock() {
+	//join prend un tableau 2d avec le hash du block et ses données puis les convertit
 	blockData := bytes.Join([][]byte{b.Hash, b.Data}, []byte{})
+	// fmt.Println(blockData)
 	blockHash := sha256.Sum256(blockData)
+	// fmt.Println(blockHash)
 	b.Hash = blockHash[:]
 }
 
+//création d'un block
+//données du block, hash du block précédent, retourne le pointeur du block créé
+func CreateBlock(data string, previousHash []byte) *Block {
+	//créé un block avec sa référence
+	//conversion des données en bytes
+	block := &Block{[]byte{}, []byte(data), previousHash}
+	//hash le block
+	block.HashingBlock()
+	return block
+}
+
+//ajout d'un block
+func (chain *Blockchain) AddBlock(data string) {
+	//récupération du block précédent
+	previousBlock := chain.blocks[len(chain.blocks)-1]
+	//création du nouveau block
+	newBlock := CreateBlock(data, previousBlock.Hash)
+	//ajout du block à la blockchain
+	chain.blocks = append(chain.blocks, newBlock)
+}
+
+func Genesis() *Block {
+	return CreateBlock("Genesis Block", []byte{})
+}
+
+func InitBlockchain() *Blockchain {
+	//retourne l'adresse de la Blockchain avec un tableau de bloc et le block genesis
+	return &Blockchain{[]*Block{Genesis()}}
+}
+
 func main() {
-	fmt.Print(quote.Hello())
+	fmt.Println("Initialisation de la Blockchain")
+	chain := InitBlockchain()
+
+	fmt.Println("Ajout de blocks")
+	chain.AddBlock("Block 1")
+	chain.AddBlock("Block 2")
+	chain.AddBlock("Block 3")
+
+	for _, block := range chain.blocks {
+		fmt.Println("***********************************************************")
+		fmt.Printf("*Hash du block prévédent : %x\n", block.PrevHash)
+		fmt.Printf("*Données du block : %s\n", block.Data)
+		fmt.Printf("*Hash du block : %x\n", block.Hash)
+
+		fmt.Println("         |\n         |\n         |\n")
+	}
+
 }
