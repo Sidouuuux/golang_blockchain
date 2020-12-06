@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"os"
+	"strconv"
 )
 
 //Block
@@ -14,21 +16,44 @@ type Block struct {
 	Data []byte
 	//hash du block précédent
 	PrevHash []byte
+	//nonce
+	Nonce int
 }
 
 //Blockchain avec un tableau contenant les pointeurs vers chaque block
 type Blockchain struct {
 	blocks []*Block
+	diff   int
 }
 
 //création d'un hash
 func (b *Block) HashingBlock() {
 	//join prend un tableau 2d avec le hash du block et ses données puis les convertit
-	blockData := bytes.Join([][]byte{b.Hash, b.Data}, []byte{})
+	blockData := bytes.Join([][]byte{b.Hash, b.Data, []byte(strconv.Itoa(b.Nonce))}, []byte{})
 	// fmt.Println(blockData)
 	blockHash := sha256.Sum256(blockData)
 	// fmt.Println(blockHash)
 	b.Hash = blockHash[:]
+}
+
+func (b *Block) Mining(difficulty int) {
+	var toHash string
+	for i := 0; i < difficulty; i++ {
+		toHash += string(b.Hash[i])
+	}
+	v, err := strconv.Atoi(toHash)
+	if err != nil {
+		// handle error
+		fmt.Println(err)
+		os.Exit(2)
+	}
+	for v != 0 {
+		b.Nonce += 1
+		b.HashingBlock()
+
+	}
+	fmt.Println("Block mined !")
+
 }
 
 //création d'un block
@@ -36,8 +61,9 @@ func (b *Block) HashingBlock() {
 func CreateBlock(data string, previousHash []byte) *Block {
 	//créé un block avec sa référence
 	//conversion des données en bytes
-	block := &Block{[]byte{}, []byte(data), previousHash}
+	block := &Block{[]byte{}, []byte(data), previousHash, 0}
 	//hash le block
+	block.Mining(2)
 	block.HashingBlock()
 	return block
 }
@@ -58,7 +84,7 @@ func Genesis() *Block {
 
 func InitBlockchain() *Blockchain {
 	//retourne l'adresse de la Blockchain avec un tableau de bloc et le block genesis
-	return &Blockchain{[]*Block{Genesis()}}
+	return &Blockchain{[]*Block{Genesis()}, 2}
 }
 
 func main() {
@@ -77,6 +103,7 @@ func main() {
 		fmt.Printf("*Hash du block : %x\n", block.Hash)
 
 		fmt.Println("         |\n         |\n         |\n")
+		fmt.Println("***********************************************************")
 	}
 
 }
